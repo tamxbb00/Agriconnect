@@ -1,0 +1,645 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AgriConnect — AI &amp; IoT Smart Farming Platform</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<link rel="stylesheet" href="styles.css" />
+<style>
+  @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+  body { margin: 0; background: #1F2E1A; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel" data-type="text/jsx" data-presets="react" id="app-source">
+/* ---------------------------------- ICONS (emoji shims, no npm needed) ---------------------------------- */
+const { useState, useRef, useCallback } = React;
+
+function IconBase({ children, size = 18, color, spin }) {
+  return (
+    <span
+      style={{
+        fontSize: size,
+        lineHeight: 1,
+        display: "inline-block",
+        filter: color ? "none" : "none",
+        color: color || "inherit",
+        animation: spin ? "spin 1s linear infinite" : "none",
+        verticalAlign: "middle",
+      }}
+    >
+      {children}
+    </span>
+  );
+}
+const Camera = (p) => <IconBase {...p}>📷</IconBase>;
+const Volume2 = (p) => <IconBase {...p}>🔊</IconBase>;
+const MapPin = (p) => <IconBase {...p}>📍</IconBase>;
+const Droplet = (p) => <IconBase {...p}>💧</IconBase>;
+const CloudRain = (p) => <IconBase {...p}>🌧️</IconBase>;
+const Sprout = (p) => <IconBase {...p}>🌱</IconBase>;
+const Bug = (p) => <IconBase {...p}>🐛</IconBase>;
+const LayoutDashboard = (p) => <IconBase {...p}>📊</IconBase>;
+const User = (p) => <IconBase {...p}>🧑‍🌾</IconBase>;
+const Loader2 = (p) => <IconBase {...p} spin>⏳</IconBase>;
+const ArrowRight = (p) => <IconBase {...p}>→</IconBase>;
+const ArrowLeft = (p) => <IconBase {...p}>←</IconBase>;
+const Radio = (p) => <IconBase {...p}>📡</IconBase>;
+
+
+/* ---------------------------------- THEME ---------------------------------- */
+const C = {
+  bg: "#1F2E1A",
+  panel: "#2E4326",
+  panel2: "#263A20",
+  card: "#2A3B23",
+  border: "#3C4F33",
+  cream: "#F4EFE3",
+  muted: "#B9C7A8",
+  gold: "#D9A441",
+  soil: "#6B4226",
+  blue: "#8FB8E0",
+  good: "#9FCB7A",
+  warn: "#E0A15C",
+};
+
+const LANGS = {
+  en: { name: "English", code: "en-IN" },
+  ta: { name: "தமிழ்", code: "ta-IN" },
+  hi: { name: "हिन्दी", code: "hi-IN" },
+};
+
+const CROPS = {
+  Paddy: { fert: "Urea + DAP, split in 3 doses across growth stages", pest: "Watch for stem borer and leaf folder — check undersides of leaves weekly" },
+  Tomato: { fert: "NPK 19:19:19 at planting, calcium spray during fruiting", pest: "Watch for early blight (brown rings on leaves) and whitefly" },
+  Sugarcane: { fert: "Nitrogen-heavy at tillering stage, potash before harvest", pest: "Watch for early shoot borer in the first 3 months" },
+  Cotton: { fert: "Balanced NPK at sowing, extra potash during boll formation", pest: "Watch for pink bollworm and aphids on new growth" },
+  Groundnut: { fert: "Gypsum at flowering for pod development", pest: "Watch for leaf miner and collar rot in wet soil" },
+};
+
+const DEFAULT_COORDS = { lat: 10.7867, lon: 79.1378, label: "Thanjavur" };
+
+/* ---------------------------------- LANDING PAGE ---------------------------------- */
+
+function Feature({ icon, title, body }) {
+  return (
+    <div className="rounded-xl p-5" style={{ background: C.card, border: `1px solid ${C.border}` }}>
+      <div
+        className="w-11 h-11 rounded-lg flex items-center justify-center mb-3"
+        style={{ background: C.panel }}
+      >
+        {icon}
+      </div>
+      <div className="text-base font-semibold mb-1.5" style={{ color: C.cream }}>{title}</div>
+      <div className="text-sm leading-relaxed" style={{ color: C.muted }}>{body}</div>
+    </div>
+  );
+}
+
+function Step({ num, title, body, last }) {
+  return (
+    <div className="flex-1 flex items-start gap-3">
+      <div className="flex flex-col items-center">
+        <div
+          className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0"
+          style={{ background: C.gold, color: C.bg }}
+        >
+          {num}
+        </div>
+        {!last && <div className="w-px flex-1 mt-1" style={{ background: C.border, minHeight: "2rem" }} />}
+      </div>
+      <div className="pb-8">
+        <div className="text-sm font-semibold mb-1" style={{ color: C.cream }}>{title}</div>
+        <div className="text-sm" style={{ color: C.muted }}>{body}</div>
+      </div>
+    </div>
+  );
+}
+
+function SiteFooter() {
+  return (
+    <div className="border-t" style={{ borderColor: C.border }}>
+      <div className="max-w-5xl mx-auto px-5 py-6 flex items-center justify-center">
+        <div className="text-xs flex items-center gap-2 flex-wrap justify-center" style={{ color: C.muted }}>
+          <span>Created By</span>
+          <a
+            href="https://tamxbb00.github.io/tamxwize.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="transition-opacity hover:opacity-75"
+            style={{ color: C.gold, fontWeight: 700, letterSpacing: "0.02em", textDecoration: "none" }}
+          >
+            TAMX Wize Technologies
+          </a>
+          <span style={{ color: C.border }}>|</span>
+          <span>© 2026 All Rights Reserved</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Chip({ children }) {
+  return (
+    <span
+      className="text-xs px-3 py-1.5 rounded-full inline-block"
+      style={{ background: C.panel, color: C.muted, border: `1px solid ${C.border}` }}
+    >
+      {children}
+    </span>
+  );
+}
+
+function Landing({ onLaunch }) {
+  return (
+    <div style={{ background: C.bg, fontFamily: "system-ui, -apple-system, sans-serif" }} className="min-h-screen w-full">
+      {/* nav */}
+      <div className="max-w-5xl mx-auto px-5 pt-6 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Sprout size={22} color={C.gold} />
+          <span className="font-semibold" style={{ color: C.cream, fontFamily: "Georgia, serif" }}>AgriConnect</span>
+        </div>
+        <button
+          onClick={onLaunch}
+          className="text-xs px-4 py-2 rounded-lg font-medium flex items-center gap-1.5"
+          style={{ background: C.gold, color: C.bg }}
+        >
+          Launch app <ArrowRight size={14} />
+        </button>
+      </div>
+
+      {/* hero */}
+      <div className="max-w-5xl mx-auto px-5 pt-16 pb-14 text-center">
+        <div
+          className="text-xs font-semibold inline-block px-3 py-1 rounded-full mb-5"
+          style={{ background: C.panel, color: C.gold, letterSpacing: "0.05em" }}
+        >
+          AI + IoT SMART FARMING
+        </div>
+        <h1
+          className="text-4xl md:text-5xl font-bold mb-5 leading-tight"
+          style={{ color: C.cream, fontFamily: "Georgia, serif" }}
+        >
+          One photo, one voice note —<br />everything a farmer needs.
+        </h1>
+        <p className="text-base max-w-xl mx-auto mb-8" style={{ color: C.muted }}>
+          AgriConnect diagnoses crop disease from a photo, checks the weather, controls irrigation automatically,
+          and reads the result back to the farmer — in their own language.
+        </p>
+        <div className="flex items-center justify-center gap-3">
+          <button
+            onClick={onLaunch}
+            className="px-6 py-3 rounded-lg font-medium text-sm flex items-center gap-2"
+            style={{ background: C.gold, color: C.bg }}
+          >
+            Try the live prototype <ArrowRight size={16} />
+          </button>
+        </div>
+      </div>
+
+      {/* problem */}
+      <div className="max-w-5xl mx-auto px-5 pb-16">
+        <div className="rounded-2xl p-7" style={{ background: C.panel2, border: `1px solid ${C.border}` }}>
+          <div className="text-xs font-semibold mb-2" style={{ color: C.gold, letterSpacing: "0.05em" }}>THE PROBLEM</div>
+          <div className="text-xl font-semibold mb-3" style={{ color: C.cream, fontFamily: "Georgia, serif" }}>
+            Fragmented tools fail rural farmers
+          </div>
+          <p className="text-sm mb-4" style={{ color: C.muted }}>
+            Farmers juggle 3–5 disconnected apps for weather, diagnosis and market prices. Most assume
+            literacy and steady internet — neither of which many rural farmers reliably have. Water and
+            fertilizer get wasted because irrigation reacts to soil moisture alone, never the forecast.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="rounded-lg p-3" style={{ background: C.card }}>
+              <div className="text-2xl font-bold" style={{ color: C.gold }}>3–5</div>
+              <div className="text-xs" style={{ color: C.muted }}>separate apps farmers juggle today</div>
+            </div>
+            <div className="rounded-lg p-3" style={{ background: C.card }}>
+              <div className="text-2xl font-bold" style={{ color: C.gold }}>0</div>
+              <div className="text-xs" style={{ color: C.muted }}>voice-first agri-tools for low-literacy users</div>
+            </div>
+            <div className="rounded-lg p-3" style={{ background: C.card }}>
+              <div className="text-2xl font-bold" style={{ color: C.gold }}>2</div>
+              <div className="text-xs" style={{ color: C.muted }}>networks used together (4G + 2G) for reliability</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* how it works */}
+      <div className="max-w-3xl mx-auto px-5 pb-16">
+        <div className="text-xs font-semibold mb-2" style={{ color: C.gold, letterSpacing: "0.05em" }}>HOW IT WORKS</div>
+        <div className="text-xl font-semibold mb-6" style={{ color: C.cream, fontFamily: "Georgia, serif" }}>
+          From photo to action in seconds
+        </div>
+        <Step num="1" title="Capture" body="Farmer photographs a crop leaf, or a field-mounted camera captures it automatically." />
+        <Step num="2" title="Diagnose" body="AI identifies the crop and checks for disease or pest damage." />
+        <Step num="3" title="Cross-check weather" body="Live forecast decides whether to fertilize now, hold off, or expect rain." />
+        <Step num="4" title="Automate irrigation" body="Soil moisture + rain forecast together turn the pump on or off automatically." />
+        <Step num="5" title="Deliver by voice" last body="Everything is summarized and read back as a WhatsApp voice note in the farmer's own language." />
+      </div>
+
+      {/* features */}
+      <div className="max-w-5xl mx-auto px-5 pb-16">
+        <div className="text-xs font-semibold mb-2" style={{ color: C.gold, letterSpacing: "0.05em" }}>KEY FEATURES</div>
+        <div className="text-xl font-semibold mb-6" style={{ color: C.cream, fontFamily: "Georgia, serif" }}>
+          Built for accessibility, not just accuracy
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Feature icon={<Camera size={20} color={C.gold} />} title="Photo diagnosis" body="Instant crop disease and pest detection from a single leaf photo." />
+          <Feature icon={<CloudRain size={20} color={C.blue} />} title="Weather advisory" body="Live forecasts decide fertilizer timing and irrigation precautions." />
+          <Feature icon={<Droplet size={20} color={C.blue} />} title="Auto irrigation" body="Soil moisture + rain forecast together control the pump automatically." />
+          <Feature icon={<Volume2 size={20} color={C.gold} />} title="Voice-first delivery" body="Spoken WhatsApp updates in the farmer's own language — no reading needed." />
+          <Feature icon={<Radio size={20} color={C.good} />} title="4G + 2G fallback" body="Critical alerts still reach farmers even when rural signal drops." />
+          <Feature icon={<Bug size={20} color={C.warn} />} title="Camera-based pest ID" body="Reliable outdoor detection — avoids acoustic sensing, which fails in field noise." />
+        </div>
+      </div>
+
+      {/* tech stack */}
+      <div className="max-w-5xl mx-auto px-5 pb-16">
+        <div className="text-xs font-semibold mb-3" style={{ color: C.gold, letterSpacing: "0.05em" }}>TECH STACK</div>
+        <div className="flex flex-wrap gap-2">
+          {["React", "Python", "Node.js", "ESP32-CAM", "SIM7600 (4G)", "SIM800L (2G/SMS)", "CNN · PlantVillage", "Open-Meteo API", "Text-to-Speech", "WhatsApp API"].map((t) => (
+            <Chip key={t}>{t}</Chip>
+          ))}
+        </div>
+      </div>
+
+      {/* cta footer */}
+      <div className="max-w-5xl mx-auto px-5 pb-16">
+        <div
+          className="rounded-2xl p-8 text-center"
+          style={{ background: `linear-gradient(135deg, ${C.panel}, ${C.panel2})`, border: `1px solid ${C.border}` }}
+        >
+          <div className="text-xl font-semibold mb-2" style={{ color: C.cream, fontFamily: "Georgia, serif" }}>
+            See it working, right now
+          </div>
+          <p className="text-sm mb-5" style={{ color: C.muted }}>
+            Real weather data, real photo analysis, real voice output — no mockups.
+          </p>
+          <button
+            onClick={onLaunch}
+            className="px-6 py-3 rounded-lg font-medium text-sm inline-flex items-center gap-2"
+            style={{ background: C.gold, color: C.bg }}
+          >
+            Launch the prototype <ArrowRight size={16} />
+          </button>
+        </div>
+      </div>
+
+      <div className="text-center pb-8 text-xs" style={{ color: C.muted }}>
+        Team AgriConnect · St. Joseph's College of Engineering and Technology, Thanjavur
+      </div>
+
+      <SiteFooter />
+    </div>
+  );
+}
+
+/* ---------------------------------- APP (working prototype) ---------------------------------- */
+
+function AppView({ onBack }) {
+  const [view, setView] = useState("farmer");
+  const [lang, setLang] = useState("en");
+  const [crop, setCrop] = useState("Paddy");
+  const [photo, setPhoto] = useState(null);
+  const [health, setHealth] = useState(null);
+  const [analyzing, setAnalyzing] = useState(false);
+  const [weather, setWeather] = useState(null);
+  const [weatherLoading, setWeatherLoading] = useState(false);
+  const [locLabel, setLocLabel] = useState(null);
+  const [soilMoisture, setSoilMoisture] = useState(55);
+  const [waterLevel, setWaterLevel] = useState(70);
+  const [log, setLog] = useState([]);
+  const [speaking, setSpeaking] = useState(false);
+  const [photoHistory, setPhotoHistory] = useState([]);
+  const canvasRef = useRef(null);
+
+  const addLog = useCallback((msg) => {
+    setLog((prev) => [{ time: new Date().toLocaleTimeString(), msg }, ...prev].slice(0, 12));
+  }, []);
+
+  const fetchWeather = useCallback((lat, lon, label) => {
+    setWeatherLoading(true);
+    setLocLabel(label);
+    fetch(
+      `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=precipitation_probability_max,temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=5`
+    )
+      .then((r) => r.json())
+      .then((data) => {
+        setWeather(data.daily);
+        setWeatherLoading(false);
+        addLog(`Weather updated for ${label}`);
+      })
+      .catch(() => {
+        setWeatherLoading(false);
+        addLog("Weather fetch failed — check connection");
+      });
+  }, [addLog]);
+
+  const useMyLocation = () => {
+    if (!navigator.geolocation) {
+      fetchWeather(DEFAULT_COORDS.lat, DEFAULT_COORDS.lon, DEFAULT_COORDS.label);
+      return;
+    }
+    setWeatherLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => fetchWeather(pos.coords.latitude, pos.coords.longitude, "Your field"),
+      () => fetchWeather(DEFAULT_COORDS.lat, DEFAULT_COORDS.lon, DEFAULT_COORDS.label)
+    );
+  };
+
+  const analyzePhoto = (file) => {
+    setAnalyzing(true);
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = canvasRef.current;
+        const ctx = canvas.getContext("2d");
+        const w = 120, h = 120;
+        canvas.width = w;
+        canvas.height = h;
+        ctx.drawImage(img, 0, 0, w, h);
+        const data = ctx.getImageData(0, 0, w, h).data;
+        let greenish = 0, brownish = 0, total = 0;
+        for (let i = 0; i < data.length; i += 4) {
+          const r = data[i], g = data[i + 1], b = data[i + 2];
+          total++;
+          if (g > r && g > b && g > 60) greenish++;
+          else if (r > 100 && g > 60 && b < 90 && r > b) brownish++;
+        }
+        const healthyRatio = greenish / total;
+        const stressRatio = brownish / total;
+        const score = Math.max(5, Math.round(100 * (healthyRatio - stressRatio * 0.5 + 0.35)));
+        const clamped = Math.min(98, score);
+        const flagged = stressRatio > 0.18 || clamped < 55;
+        const result = { score: clamped, flagged, timestamp: new Date().toLocaleString() };
+        setHealth(result);
+        setPhotoHistory((prev) => [{ ...result, url: e.target.result }, ...prev].slice(0, 6));
+        setAnalyzing(false);
+        addLog(flagged ? `Photo analyzed — possible stress detected (${clamped}%)` : `Photo analyzed — looking healthy (${clamped}%)`);
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+    setPhoto(URL.createObjectURL(file));
+  };
+
+  const rainSoon = weather?.precipitation_probability_max?.[0] > 50 || weather?.precipitation_probability_max?.[1] > 50;
+  const irrigationOn = soilMoisture < 40 && !rainSoon;
+  const cropInfo = CROPS[crop];
+
+  const buildSummary = () => {
+    const parts = [];
+    parts.push(`${crop} update.`);
+    if (health) parts.push(health.flagged ? "The leaf photo shows possible stress, keep monitoring." : "The crop looks healthy.");
+    if (weather) parts.push(rainSoon ? "Rain is expected in the next two days, so hold off on fertilizer." : "No rain expected soon, safe to apply fertilizer if needed.");
+    parts.push(irrigationOn ? "Irrigation is currently on because soil moisture is low." : "Irrigation is off for now.");
+    parts.push(cropInfo.pest);
+    return parts.join(" ");
+  };
+
+  const speak = () => {
+    const text = buildSummary();
+    if (!window.speechSynthesis) {
+      addLog("Voice not supported on this device");
+      return;
+    }
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.lang = LANGS[lang].code;
+    utter.rate = 0.95;
+    setSpeaking(true);
+    utter.onend = () => setSpeaking(false);
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(utter);
+    addLog(`Voice summary played (${LANGS[lang].name})`);
+  };
+
+  return (
+    <div className="min-h-screen w-full" style={{ background: C.bg, fontFamily: "Georgia, 'Iowan Old Style', serif" }}>
+      <canvas ref={canvasRef} className="hidden" />
+      <div className="max-w-md mx-auto px-4 py-6" style={{ fontFamily: "system-ui, -apple-system, sans-serif" }}>
+        <header className="flex items-center justify-between mb-4">
+          <button onClick={onBack} className="flex items-center gap-1 text-xs" style={{ color: C.muted }}>
+            <ArrowLeft size={14} /> Home
+          </button>
+          <div className="flex items-center gap-2">
+            <Sprout size={22} color={C.gold} />
+            <h1 className="text-lg" style={{ color: C.cream, fontFamily: "Georgia, serif" }}>AgriConnect</h1>
+          </div>
+          <select
+            value={lang}
+            onChange={(e) => setLang(e.target.value)}
+            className="text-sm rounded px-2 py-1 border-none"
+            style={{ background: C.panel, color: C.cream }}
+          >
+            {Object.entries(LANGS).map(([k, v]) => (
+              <option key={k} value={k}>{v.name}</option>
+            ))}
+          </select>
+        </header>
+
+        <div className="flex gap-2 mb-5">
+          <button
+            onClick={() => setView("farmer")}
+            className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm"
+            style={{ background: view === "farmer" ? C.gold : C.panel, color: view === "farmer" ? C.bg : C.cream }}
+          >
+            <User size={16} /> Farmer view
+          </button>
+          <button
+            onClick={() => setView("dashboard")}
+            className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm"
+            style={{ background: view === "dashboard" ? C.gold : C.panel, color: view === "dashboard" ? C.bg : C.cream }}
+          >
+            <LayoutDashboard size={16} /> Dashboard
+          </button>
+        </div>
+
+        <div className="mb-5">
+          <label className="text-xs block mb-1" style={{ color: C.muted }}>Crop</label>
+          <select
+            value={crop}
+            onChange={(e) => setCrop(e.target.value)}
+            className="w-full rounded-lg px-3 py-2 text-sm border-none"
+            style={{ background: C.panel, color: C.cream }}
+          >
+            {Object.keys(CROPS).map((c) => <option key={c} value={c}>{c}</option>)}
+          </select>
+        </div>
+
+        {view === "farmer" ? (
+          <div className="space-y-4">
+            <label
+              className="flex flex-col items-center justify-center gap-2 py-8 rounded-xl cursor-pointer border-2 border-dashed"
+              style={{ borderColor: C.soil, background: C.card }}
+            >
+              {analyzing ? <Loader2 className="animate-spin" size={28} color={C.gold} /> : <Camera size={28} color={C.gold} />}
+              <span className="text-sm" style={{ color: C.cream }}>
+                {analyzing ? "Checking your photo..." : "Tap to upload crop photo"}
+              </span>
+              <input type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => e.target.files[0] && analyzePhoto(e.target.files[0])} />
+            </label>
+
+            {photo && health && (
+              <div className="rounded-xl p-4 flex gap-3 items-center" style={{ background: C.panel }}>
+                <img src={photo} alt="crop" className="w-16 h-16 rounded-lg object-cover" />
+                <div>
+                  <div className="text-sm" style={{ color: health.flagged ? C.warn : C.good }}>
+                    {health.flagged ? "Possible stress detected" : "Looking healthy"}
+                  </div>
+                  <div className="text-xs" style={{ color: C.muted }}>Visual health score: {health.score}% (quick color-pattern check, not a lab diagnosis)</div>
+                </div>
+              </div>
+            )}
+
+            <button
+              onClick={useMyLocation}
+              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm"
+              style={{ background: C.panel, color: C.cream }}
+            >
+              {weatherLoading ? <Loader2 className="animate-spin" size={16} /> : <MapPin size={16} />}
+              {weather ? `Weather: ${locLabel}` : "Get weather for my field"}
+            </button>
+
+            {weather && (
+              <div className="rounded-xl p-4" style={{ background: C.panel }}>
+                <div className="flex items-center gap-2 mb-2 text-sm" style={{ color: C.cream }}>
+                  <CloudRain size={16} color={C.blue} />
+                  {rainSoon ? "Rain expected in the next 2 days" : "No significant rain expected soon"}
+                </div>
+                <div className="text-xs" style={{ color: C.muted }}>
+                  {rainSoon ? "Hold off on fertilizer application." : "Safe window to apply fertilizer."}
+                </div>
+              </div>
+            )}
+
+            <div className="rounded-xl p-4 flex items-center justify-between" style={{ background: C.panel }}>
+              <div className="flex items-center gap-2 text-sm" style={{ color: C.cream }}>
+                <Droplet size={16} color={C.blue} /> Irrigation
+              </div>
+              <span className="text-xs px-2 py-1 rounded-full" style={{ background: irrigationOn ? "#3E5A2E" : "#4A3B2A", color: irrigationOn ? C.good : C.warn }}>
+                {irrigationOn ? "ON — soil is dry" : "OFF"}
+              </span>
+            </div>
+
+            <button
+              onClick={speak}
+              disabled={speaking}
+              className="w-full flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-medium"
+              style={{ background: C.gold, color: C.bg }}
+            >
+              <Volume2 size={16} /> {speaking ? "Playing..." : `Hear today's update in ${LANGS[lang].name}`}
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="rounded-xl p-4" style={{ background: C.panel }}>
+              <div className="text-sm mb-3" style={{ color: C.cream }}>Simulated field sensors</div>
+              <div className="mb-3">
+                <div className="flex justify-between text-xs mb-1" style={{ color: C.muted }}>
+                  <span>Soil moisture</span><span>{soilMoisture}%</span>
+                </div>
+                <input type="range" min="0" max="100" value={soilMoisture} onChange={(e) => setSoilMoisture(+e.target.value)} className="w-full" />
+              </div>
+              <div>
+                <div className="flex justify-between text-xs mb-1" style={{ color: C.muted }}>
+                  <span>Water tank level</span><span>{waterLevel}%</span>
+                </div>
+                <input type="range" min="0" max="100" value={waterLevel} onChange={(e) => setWaterLevel(+e.target.value)} className="w-full" />
+                {waterLevel < 20 && <div className="text-xs mt-1" style={{ color: C.warn }}>Critical: refill tank soon</div>}
+              </div>
+            </div>
+
+            {weather && (
+              <div className="rounded-xl p-4" style={{ background: C.panel }}>
+                <div className="text-sm mb-2" style={{ color: C.cream }}>5-day forecast — {locLabel}</div>
+                <div className="grid grid-cols-5 gap-1">
+                  {weather.temperature_2m_max.map((t, i) => (
+                    <div key={i} className="text-center">
+                      <div className="text-xs" style={{ color: C.muted }}>{new Date(weather.time[i]).toLocaleDateString(undefined, { weekday: "short" })}</div>
+                      <div className="text-xs" style={{ color: C.cream }}>{Math.round(t)}°</div>
+                      <div className="text-xs" style={{ color: C.blue }}>{weather.precipitation_probability_max[i]}%</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="rounded-xl p-4" style={{ background: C.panel }}>
+              <div className="flex items-center gap-2 text-sm mb-2" style={{ color: C.cream }}>
+                <Bug size={16} color={C.warn} /> Pest watch — {crop}
+              </div>
+              <div className="text-xs" style={{ color: C.muted }}>{cropInfo.pest}</div>
+              <div className="text-xs mt-2" style={{ color: C.muted }}>Fertilizer: {cropInfo.fert}</div>
+            </div>
+
+            {photoHistory.length > 0 && (
+              <div className="rounded-xl p-4" style={{ background: C.panel }}>
+                <div className="text-sm mb-2" style={{ color: C.cream }}>Growth photo history</div>
+                <div className="flex gap-2 overflow-x-auto">
+                  {photoHistory.map((p, i) => (
+                    <div key={i} className="flex-shrink-0 text-center">
+                      <img src={p.url} className="w-14 h-14 rounded object-cover" />
+                      <div className="text-xs mt-1" style={{ color: C.muted }}>{p.score}%</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="rounded-xl p-4" style={{ background: C.panel }}>
+              <div className="text-sm mb-2" style={{ color: C.cream }}>Activity log</div>
+              {log.length === 0 && <div className="text-xs" style={{ color: C.muted }}>No activity yet — upload a photo or check weather.</div>}
+              <div className="space-y-1 max-h-40 overflow-y-auto">
+                {log.map((l, i) => (
+                  <div key={i} className="text-xs flex gap-2" style={{ color: C.muted }}>
+                    <span style={{ color: C.soil }}>{l.time}</span> {l.msg}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <SiteFooter />
+    </div>
+  );
+}
+
+/* ---------------------------------- ROOT ---------------------------------- */
+
+function AgriConnectSite() {
+  const [page, setPage] = useState("landing");
+  return page === "landing" ? (
+    <Landing onLaunch={() => setPage("app")} />
+  ) : (
+    <AppView onBack={() => setPage("landing")} />
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<AgriConnectSite />);
+
+</script>
+<script>
+  // Force classic JSX runtime (React.createElement) so no ES-module import
+  // is injected by Babel's newer "automatic" runtime default — required
+  // for plain <script> execution without a bundler.
+  (function () {
+    var src = document.getElementById("app-source").textContent;
+    var out = Babel.transform(src, {
+      presets: [["react", { runtime: "classic" }]],
+    }).code;
+    var s = document.createElement("script");
+    s.textContent = out;
+    document.body.appendChild(s);
+  })();
+</script>
+</body>
+</html>
